@@ -110,6 +110,8 @@ namespace reco {
           mvaOpt_ = kDBoldDMwLTwGJ;
         else if (mvaOpt_string == "DBnewDMwLTwGJ")
           mvaOpt_ = kDBnewDMwLTwGJ;
+        else if (mvaOpt_string == "Phase2")
+          mvaOpt_ = kPhase2;
         else
           throw cms::Exception("PATTauDiscriminationByMVAIsolationRun2")
               << " Invalid Configuration Parameter 'mvaOpt' = " << mvaOpt_string << " !!\n";
@@ -121,6 +123,8 @@ namespace reco {
         else if (mvaOpt_ == kDBoldDMwLT || mvaOpt_ == kDBnewDMwLT || mvaOpt_ == kPWoldDMwLT || mvaOpt_ == kPWnewDMwLT ||
                  mvaOpt_ == kDBoldDMwLTwGJ || mvaOpt_ == kDBnewDMwLTwGJ)
           mvaInput_ = new float[23];
+        else if (mvaOpt_ == kPhase2)
+           mvaInput_ = new float[30];
         else
           assert(0);
 
