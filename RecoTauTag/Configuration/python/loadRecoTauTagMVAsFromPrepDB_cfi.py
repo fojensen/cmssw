@@ -45,7 +45,6 @@ tauIdDiscrMVA_trainings_run2_2017 = {
 }
 tauIdDiscrMVA_trainings_phase2 = {
     'tauIdMVAIsoPhase2' : "tauIdMVAIsoPhase2",
-    #'tauIdMVAIsoPhase2' : "BDT",
 }
 tauIdDiscrMVA_WPs = {
     'tauIdMVAoldDMwoLT' : {
