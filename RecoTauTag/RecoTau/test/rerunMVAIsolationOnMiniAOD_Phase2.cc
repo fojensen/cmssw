@@ -1,11 +1,10 @@
 #include "FWCore/Framework/interface/EDAnalyzer.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
-//#include "DataFormats/PatCandidates/interface/CompositeCandidate.h"
-#include "DataFormats/HepMCCandidate/interface/GenParticle.h"
 #include "DataFormats/PatCandidates/interface/Tau.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
+#include "DataFormats/JetReco/interface/GenJet.h"
 
 #include "TH1D.h"
 #include "TH2D.h"
@@ -36,10 +35,8 @@ private:
 
    bool haveGenJets;
    edm::EDGetTokenT<std::vector<reco::GenJet>> genJetToken_;   
-   //bool haveGenVisTaus;
-   //edm::EDGetTokenT<pat::CompositeCandidateCollection> genVisTauToken_;
-   bool haveGenParticles;
-   edm::EDGetTokenT<std::vector<reco::GenParticle>> genParticleToken_;
+   bool haveGenVisTaus;
+   edm::EDGetTokenT<std::vector<reco::GenJet>> genVisTauToken_;
 };
 
 rerunMVAIsolationOnMiniAOD_Phase2::rerunMVAIsolationOnMiniAOD_Phase2(const edm::ParameterSet& iConfig)
@@ -51,15 +48,10 @@ rerunMVAIsolationOnMiniAOD_Phase2::rerunMVAIsolationOnMiniAOD_Phase2(const edm::
       haveGenJets = true;
       genJetToken_ = consumes<std::vector<reco::GenJet>>(iConfig.getParameter<edm::InputTag>("genJetCollection"));
    }
-   //haveGenVisTaus = false;
-   //if (iConfig.existsAs<edm::InputTag>("genVisTauCollection")) {
-   //   haveGenVisTaus = true;
-   //   genVisTauToken_ = consumes<pat::CompositeCandidateCollection>(iConfig.getParameter<edm::InputTag>("genVisTauCollection"));
-   //}
-   haveGenParticles = false;
-   if (iConfig.existsAs<edm::InputTag>("genParticleCollection")) {
-      haveGenParticles = true;
-      genParticleToken_ = consumes<std::vector<reco::GenParticle>>(iConfig.getParameter<edm::InputTag>("genParticleCollection"));
+   haveGenVisTaus = false;
+   if (iConfig.existsAs<edm::InputTag>("genVisTauCollection")) {
+      haveGenVisTaus = true;
+      genVisTauToken_ = consumes<std::vector<reco::GenJet>>(iConfig.getParameter<edm::InputTag>("genVisTauCollection"));
    }
 
    edm::Service<TFileService> fileService;
@@ -111,14 +103,19 @@ void rerunMVAIsolationOnMiniAOD_Phase2::analyze(const edm::Event& iEvent, const 
    iEvent.getByToken(tauToken_, taus);
 
    edm::Handle<std::vector<reco::GenJet>> genJets;
-   if (haveGenJets) iEvent.getByToken(genJetToken_, genJets);
+   if (!iEvent.isRealData() && haveGenJets) {
+      iEvent.getByToken(genJetToken_, genJets);
+   } else {
+      haveGenJets = false;
+   }
+   
+   edm::Handle<std::vector<reco::GenJet>> genVisTaus;
+   if (!iEvent.isRealData() && haveGenVisTaus) {
+      iEvent.getByToken(genVisTauToken_, genVisTaus);
+   } else {
+      haveGenVisTaus = false;
+   }
 
-   //edm::Handle<pat::CompositeCandidateCollection> genVisTaus;
-   //if (haveGenVisTaus) iEvent.getByToken(genVisTauToken_, genVisTaus);
-
-   edm::Handle<std::vector<reco::GenParticle>> genParticles;
-   if (haveGenParticles) iEvent.getByToken(genParticleToken_, genParticles);
- 
    for (auto i = taus->begin(); i != taus->end(); ++i) {
       
       const double pt = i->pt();
@@ -138,41 +135,26 @@ void rerunMVAIsolationOnMiniAOD_Phase2::analyze(const edm::Event& iEvent, const 
       }
       if (isPU) continue;
 
-      //bool isSig = false;
-      //if (haveGenVisTaus) {
-      //   double mindr = 99.;
-      //   for (auto j = genVisTaus->begin(); j != genVisTaus->end(); ++j) {
-      //      if (std::abs(j->pdgId())==15 && reco::deltaR(*i, *j)<mindr) {
-      //         mindr = reco::deltaR(*i, *j);
-      //      }
-      //   }
-      //   if (mindr<0.4) isSig = true;
-      //}
-
       bool isSig = false;
-      if (haveGenParticles) {
-         double mindr_e = 99.;
-         double mindr_m = 99.;
-         double mindr_t = 99.;
-         for (auto j = genParticles->begin(); j != genParticles->end(); ++j) {
-            const double dr = reco::deltaR(*i, *j);
-            const int pdgid = std::abs(j->pdgId());
-            if (pdgid==11 && j->status()==1 && dr<mindr_e) mindr_e = dr;
-            if (pdgid==13 && j->status()==1 && dr<mindr_m) mindr_m = dr;
-            if (pdgid==15 && j->isLastCopy() && dr<mindr_t) mindr_t = dr;
+      if (haveGenVisTaus) {
+         double mindr = 99.;
+         for (auto j = genVisTaus->begin(); j != genVisTaus->end(); ++j) {
+               if (reco::deltaR(*i, *j)<mindr) {
+               mindr = reco::deltaR(*i, *j);
+            }
          }
-         if (mindr_e>=0.4 && mindr_m>=0.4 && mindr_t<0.5) isSig = true;
+         if (mindr<0.4) isSig = true;
       }
 
-      const double byIsolationMVAPhase2raw = i->tauID("byIsolationMVAPhase2raw");
+      const double byIsolationMVAPhase2raw = i->tauID("byIsolationMVADBnewDMwLTPhase2raw");
       double wp[7];
-      wp[0] = i->tauID("byVVLooseIsolationMVAPhase2New");
-      wp[1] = i->tauID("byVLooseIsolationMVAPhase2New");
-      wp[2] = i->tauID("byLooseIsolationMVAPhase2New");
-      wp[3] = i->tauID("byMediumIsolationMVAPhase2New");
-      wp[4] = i->tauID("byTightIsolationMVAPhase2New");
-      wp[5] = i->tauID("byVTightIsolationMVAPhase2New");
-      wp[6] = i->tauID("byVVTightIsolationMVAPhase2New");
+      wp[0] = i->tauID("byVVLooseIsolationMVADBnewDMwLTPhase2");
+      wp[1] = i->tauID("byVLooseIsolationMVADBnewDMwLTPhase2");
+      wp[2] = i->tauID("byLooseIsolationMVADBnewDMwLTPhase2");
+      wp[3] = i->tauID("byMediumIsolationMVADBnewDMwLTPhase2");
+      wp[4] = i->tauID("byTightIsolationMVADBnewDMwLTPhase2");
+      wp[5] = i->tauID("byVTightIsolationMVADBnewDMwLTPhase2");
+      wp[6] = i->tauID("byVVTightIsolationMVADBnewDMwLTPhase2");
       
       if (isSig) {
          h_raw_sig->Fill(byIsolationMVAPhase2raw);
