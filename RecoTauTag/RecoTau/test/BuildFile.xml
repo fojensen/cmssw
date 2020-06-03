@@ -1,6 +1,6 @@
 <bin name="TestRecoTauTagCombinatoricGenerator" file="CombinatoricGenerator_t.cppunit.cc">
-  <use  name="RecoTauTag/RecoTau"/>
-  <use  name="cppunit"/>
+  <use name="RecoTauTag/RecoTau"/>
+  <use name="cppunit"/>
 </bin>
 
 <library name="rerunMVAIsolationOnMiniAOD" file="rerunMVAIsolationOnMiniAOD.cc">
