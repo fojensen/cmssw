@@ -15,8 +15,9 @@
   <use name="FWCore/ServiceRegistry"/>
   <use name="clhep"/>
   <use name="root"/>
-<flags EDM_PLUGIN="1"/>
+  <flags EDM_PLUGIN="1"/>
 </library>
+
 <library name="rerunMVAIsolationOnMiniAOD_Phase2" file="rerunMVAIsolationOnMiniAOD_Phase2.cc">
    <use name="FWCore/Framework"/>
    <use name="FWCore/PluginManager"/>
@@ -36,4 +37,5 @@
     <flags TEST_RUNNER_ARGS=" /bin/bash RecoTauTag/RecoTau/test runtests.sh"/>
     <use name="FWCore/Utilities"/>
   </bin>
+
 </environment>
